@@ -1,20 +1,22 @@
 """Verificación de token"""
 
+import json
 import os
+import urllib.request
 from fastapi import HTTPException, status, Header
-import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, initialize_app
 
+# firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
 
-firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+firebase_url = os.getenv("FIREBASE_CREDENTIALS_PATH")
 
-if firebase_credentials_path and os.path.exists(firebase_credentials_path):
-    cred = credentials.Certificate(firebase_credentials_path)
-    firebase_admin.initialize_app(cred)
+if firebase_url:
+    with urllib.request.urlopen(firebase_url) as response:
+        cred_data = json.load(response)
+    cred = credentials.Certificate(cred_data)
+    initialize_app(cred)
 else:
-    print("⚠️ Firebase credentials not found, skipping Firebase initialization.")
-    firebase_admin.initialize_app()
-
+    print("⚠️ No Firebase credentials found.")
 
 def verify_token(authorization: str = Header(...)):
     """Verificar Token FIREBASE"""
