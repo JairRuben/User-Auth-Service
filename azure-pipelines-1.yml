@@ -1,0 +1,10 @@
+trigger: none
+
+pool:
+  name: Default
+
+steps:
+- script: |
+    echo "🎉 Todo pasó correctamente"
+    exit 0
+  displayName: '✅ PASO CORRECTAMENTE'
