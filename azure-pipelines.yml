@@ -3,18 +3,11 @@ trigger: none
 pool:
   name: Default
 
-variables:
-  python.version: '3.13.2'
-
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Usar Python $(python.version)'
-
 - script: |
+    python --version
     echo "Simulando instalación de dependencias..."
-  displayName: 'Simular instalación de dependencias'
+  displayName: 'Verificar Python y simular instalación'
 
 - script: |
     echo "Ejecución de tests..."
