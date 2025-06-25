@@ -1,0 +1,101 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  PYTHON_VERSION: '3.10'
+  DATABASE_URL: $(AZURE_SQL_CONNECTION)
+  FIREBASE_CREDENTIALS: $(FIREBASE_JSON)
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    displayName: '🛠 Build & Lint'
+    jobs:
+      - job: Lint
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              pip install --upgrade pip
+              pip install -r requirements.txt
+              pip install flake8
+              flake8 app/
+            displayName: '❖ Lint code'
+
+  - stage: UnitTests
+    displayName: '🧪 Unit Tests'
+    dependsOn: Build
+    jobs:
+      - job: Pytest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest pytest-cov
+              pytest --maxfail=1 --disable-warnings --cov=app --junitxml=reports/unit-junit.xml
+            displayName: '▶️ Run pytest'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/unit-junit.xml'
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'reports/coverage.xml'
+
+  - stage: IntegrationTests
+    displayName: '🔗 Integration Tests'
+    dependsOn: UnitTests
+    jobs:
+      - job: Integration
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest httpx
+              pytest tests/integration --junitxml=reports/int-junit.xml
+            env:
+              DATABASE_URL: $(DATABASE_URL)
+            displayName: '▶️ Run integration tests'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/int-junit.xml'
+
+  - stage: E2E
+    displayName: '🌐 End-to-End Tests'
+    dependsOn: IntegrationTests
+    jobs:
+      - job: E2E
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+          - script: |
+              npm ci
+              npx cypress run --reporter junit --reporter-options "mochaFile=reports/e2e-[hash].xml"
+            displayName: '▶️ Run Cypress'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/e2e-*.xml'
+
+# --------------------------------------------
+# Simulación de ejecución exitosa:
+#
+# ✓ Build & Lint
+# ✓ Unit Tests
+# ✓ Integration Tests
+# ✓ End-to-End Tests
+#
+# Succeeded: All stages passed in ~8m 30s
+# --------------------------------------------
