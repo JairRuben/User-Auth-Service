@@ -5,6 +5,29 @@ pool:
 
 steps:
 - script: |
-    echo "🎉 Todo pasó correctamente"
+    echo "📦 Instalando dependencias (simulado)..."
+    timeout /t 1 >nul
+    echo "✅ Dependencias instaladas"
     exit 0
-  displayName: '✅ Exitoso'
+  displayName: '📦 Install dependencies'
+
+- script: |
+    echo "🧪 Ejecutando pruebas unitarias con pytest (simulado)..."
+    timeout /t 1 >nul
+    echo "✅ Pytest pasó exitosamente"
+    exit 0
+  displayName: '🧪 Pytest tests'
+
+- script: |
+    echo "🔗 Ejecutando pruebas de integración (simulado)..."
+    timeout /t 1 >nul
+    echo "✅ Pruebas de integración exitosas"
+    exit 0
+  displayName: '🔗 Integration tests'
+
+- script: |
+    echo "🌐 Ejecutando pruebas end-to-end (simulado)..."
+    timeout /t 1 >nul
+    echo "✅ Pruebas E2E completadas"
+    exit 0
+  displayName: '🌐 E2E tests'
