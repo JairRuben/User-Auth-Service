@@ -5,8 +5,8 @@ pool:
 
 steps:
 - script: |
-    set PATH=C:\Users\xjair\AppData\Local\Programs\Python\Python313\;%PATH%
-    python --version
+    set PATH=C:\Users\xjair\AppData\Local\Programs\Python\Python313\;%PATH% && ^
+    python --version && ^
     echo "Simulando instalación de dependencias..."
   displayName: 'Verificar Python y simular instalación'
 
