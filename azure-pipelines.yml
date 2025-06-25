@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - master      # o la rama que uses
+
+variables:
+  PYTHON_VERSION: '3.10'
+  # Define tu cadena de conexión a Azure SQL en Library→Variable groups
+  DATABASE_URL: $(AZURE_SQL_CONNECTION)  
+  # Si necesitas credenciales de Firebase, defínelas como secrets en Library
+  FIREBASE_CREDENTIALS: $(FIREBASE_JSON)  
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    displayName: '🛠 Build & Lint'
+    jobs:
+      - job: Lint
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+              pip install flake8
+              flake8 app/
+            displayName: '❖ Lint code'
+
+  - stage: UnitTests
+    displayName: '🧪 Unit Tests'
+    dependsOn: Build
+    jobs:
+      - job: Pytest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest pytest-cov
+              pytest --maxfail=1 --disable-warnings --cov=app --junitxml=reports/unit-junit.xml
+            displayName: '▶️ Run pytest'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/unit-junit.xml'
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'reports/coverage.xml'
+
+  - stage: IntegrationTests
+    displayName: '🔗 Integration Tests'
+    dependsOn: UnitTests
+    jobs:
+      - job: Integration
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(PYTHON_VERSION)'
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest httpx
+              pytest tests/integration --junitxml=reports/int-junit.xml
+            env:
+              DATABASE_URL: $(DATABASE_URL)
+            displayName: '▶️ Run integration tests'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/int-junit.xml'
+
+  - stage: E2E
+    displayName: '🌐 End-to-End Tests'
+    dependsOn: IntegrationTests
+    jobs:
+      - job: E2E
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+          - script: |
+              npm ci
+              npx cypress run --reporter junit --reporter-options "mochaFile=reports/e2e-[hash].xml"
+            displayName: '▶️ Run Cypress'
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'reports/e2e-*.xml'
