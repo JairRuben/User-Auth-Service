@@ -1,33 +1,53 @@
 trigger: none
 
-pool:
-  name: Default
+stages:
+- stage: Lint
+  displayName: '🛠 Build & Lint'
+  jobs:
+  - job: LintJob
+    steps:
+    - script: |
+        echo "🔍 Linting código (simulado)..."
+        timeout /t 1 >nul
+        echo "✅ Lint sin errores"
+        exit 0
+      displayName: 'Lint'
 
-steps:
-- script: |
-    echo "📦 Instalando dependencias (simulado)..."
-    timeout /t 1 >nul
-    echo "✅ Dependencias instaladas"
-    exit 0
-  displayName: '📦 Install dependencies'
+- stage: Pytest
+  displayName: '🧪 Unit Tests'
+  dependsOn: Lint
+  jobs:
+  - job: PytestJob
+    steps:
+    - script: |
+        echo "🧪 Ejecutando Pytest (simulado)..."
+        echo "5 passed, 0 failed"
+        timeout /t 1 >nul
+        exit 0
+      displayName: 'Pytest'
 
-- script: |
-    echo "🧪 Ejecutando pruebas unitarias con pytest (simulado)..."
-    timeout /t 1 >nul
-    echo "✅ Pytest pasó exitosamente"
-    exit 0
-  displayName: '🧪 Pytest tests'
+- stage: Integration
+  displayName: '🔗 Integration Tests'
+  dependsOn: Pytest
+  jobs:
+  - job: IntegrationJob
+    steps:
+    - script: |
+        echo "🔗 Ejecutando pruebas de integración (simulado)..."
+        echo "3 passed, 0 failed"
+        timeout /t 1 >nul
+        exit 0
+      displayName: 'Integration Tests'
 
-- script: |
-    echo "🔗 Ejecutando pruebas de integración (simulado)..."
-    timeout /t 1 >nul
-    echo "✅ Pruebas de integración exitosas"
-    exit 0
-  displayName: '🔗 Integration tests'
-
-- script: |
-    echo "🌐 Ejecutando pruebas end-to-end (simulado)..."
-    timeout /t 1 >nul
-    echo "✅ Pruebas E2E completadas"
-    exit 0
-  displayName: '🌐 E2E tests'
+- stage: E2E
+  displayName: '🌐 End-to-End Tests'
+  dependsOn: Integration
+  jobs:
+  - job: E2ETestJob
+    steps:
+    - script: |
+        echo "🌐 Ejecutando pruebas E2E (simulado)..."
+        echo "2 passed, 0 failed"
+        timeout /t 1 >nul
+        exit 0
+      displayName: 'E2E Tests'
